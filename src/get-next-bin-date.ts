@@ -1,3 +1,4 @@
+import { isSameDay } from 'date-fns';
 import puppeteer, { Page } from 'puppeteer';
 import { houseNumber, postCode } from './inputs';
 
@@ -12,6 +13,8 @@ export interface IBinData {
     wasteDate: Date;
     wasteType: string;
 }
+
+let lastBinData: [Date, Promise<IBinData>] | undefined = undefined;
 
 export async function getNextBinDate(): Promise<IBinData> {
     const browser = await puppeteer.launch({
@@ -80,6 +83,8 @@ export async function getNextBinDate(): Promise<IBinData> {
         });
     }
 
+    console.log('Got bin data!');
+
     wasteData.sort((a, b) => (a.wasteDate > b.wasteDate ? 1 : -1));
     //console.log(JSON.stringify(wasteData));
 
@@ -97,4 +102,19 @@ export async function getNextBinDate(): Promise<IBinData> {
     await browser.close();
 
     return nextWasteData;
+}
+
+export async function getCachedBinData(): Promise<IBinData> {
+    if (lastBinData && isSameDay(lastBinData[0], new Date())) {
+        console.log('bin cache hit');
+        return lastBinData[1];
+    }
+
+    console.log('bin cache miss');
+    const binPromise = getNextBinDate();
+
+    console.log('setup cache');
+    lastBinData = [new Date(), binPromise];
+
+    return binPromise;
 }

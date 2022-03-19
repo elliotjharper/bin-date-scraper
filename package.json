@@ -4,12 +4,17 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "next-bin-date": "ts-node ./src/main.ts",
+        "next-bin-date": "ts-node ./src/get-next-bin-date.ts",
         "run-alexa-server": "ts-node ./src/server.ts"
     },
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "ask-sdk": "^2.12.0",
+        "ask-sdk-core": "^2.12.0",
+        "ask-sdk-express-adapter": "^2.12.0",
+        "ask-sdk-model": "^1.38.0",
+        "body-parser": "^1.19.2",
         "date-fns": "^2.28.0",
         "express": "^4.17.3",
         "puppeteer": "^13.5.1",

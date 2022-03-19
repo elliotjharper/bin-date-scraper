@@ -8,7 +8,7 @@
             "name": "debug test",
             "type": "pwa-node",
             "request": "launch",
-            "args": ["${workspaceRoot}/src/test.ts"],
+            "args": ["${workspaceRoot}/src/server.ts"],
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
             "sourceMaps": true,
             "cwd": "${workspaceRoot}",
