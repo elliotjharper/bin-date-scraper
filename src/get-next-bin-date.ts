@@ -1,8 +1,5 @@
-import { format } from 'date-fns';
-import { Page, PuppeteerNode } from 'puppeteer';
+import puppeteer, { Page } from 'puppeteer';
 import { houseNumber, postCode } from './inputs';
-
-const puppeteer: PuppeteerNode = require('puppeteer');
 
 const startPageUrl =
     'https://www.testvalley.gov.uk/wasteandrecycling/when-are-my-bins-collected/look-up-my-bin-collection-days';
@@ -11,7 +8,12 @@ function logCurrentPageUrl(page: Page): void {
     //console.log(`Current URL: ${page.url()}`);
 }
 
-async function testItOut() {
+export interface IBinData {
+    wasteDate: Date;
+    wasteType: string;
+}
+
+export async function getNextBinDate(): Promise<IBinData> {
     const browser = await puppeteer.launch({
         // headless: false,
         // defaultViewport: null,
@@ -55,7 +57,7 @@ async function testItOut() {
 
     // get the two tables: ul#CollectionDay_report li
     const wasteListItems = await page.$$('ul#CollectionDay_report li');
-    let wasteData: { wasteDate: Date; wasteType: string }[] = [];
+    let wasteData: IBinData[] = [];
     for (let wasteListItem of wasteListItems) {
         const [, usefulCellHandle] = await wasteListItem.$$('td');
 
@@ -83,16 +85,16 @@ async function testItOut() {
 
     //await page.screenshot({ path: 'example.png' });
 
-    console.log(
-        `Next collection is: [${wasteData[0].wasteType}] on [${format(
-            wasteData[0].wasteDate,
-            'iii do MMM'
-        )}]`
-    );
+    const nextWasteData = wasteData[0];
+
+    // console.log(
+    //     `Next collection is: [${wasteData[0].wasteType}] on [${format(
+    //         wasteData[0].wasteDate,
+    //         'iii do MMM'
+    //     )}]`
+    // );
 
     await browser.close();
-}
 
-(async () => {
-    await testItOut();
-})();
+    return nextWasteData;
+}
