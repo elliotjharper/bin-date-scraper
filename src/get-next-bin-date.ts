@@ -1,33 +1,38 @@
 import { isSameDay } from 'date-fns';
-import puppeteer, { Page } from 'puppeteer';
+import puppeteer from 'puppeteer';
 import { houseNumber, postCode } from './inputs';
-
-const startPageUrl =
-    'https://www.testvalley.gov.uk/wasteandrecycling/when-are-my-bins-collected/look-up-my-bin-collection-days';
-
-function logCurrentPageUrl(page: Page): void {
-    //console.log(`Current URL: ${page.url()}`);
-}
 
 export interface IBinData {
     wasteDate: Date;
     wasteType: string;
 }
 
-let lastBinData: [Date, Promise<IBinData>] | undefined = undefined;
+async function startBrowser(runningOnRasPi: boolean): Promise<puppeteer.Browser> {
+    if (runningOnRasPi) {
+        return await puppeteer.launch({
+            headless: true,
+            executablePath: '/usr/bin/chromium-browser',
+            args: ['--no-sandbox', 'disable-setuid-sandbox'],
+            //ignoreDefaultArgs: ['--disable-extensions'],
+            // defaultViewport: null,
+        });
+    } else {
+        return await puppeteer.launch({
+            headless: true,
+        });
+    }
+}
 
-export async function getNextBinDate(): Promise<IBinData> {
-    const browser = await puppeteer.launch({
-        // headless: false,
-        // defaultViewport: null,
-    });
+async function goToStartPage(page: puppeteer.Page) {
+    const startPageUrl =
+        'https://www.testvalley.gov.uk/wasteandrecycling/when-are-my-bins-collected/look-up-my-bin-collection-days';
 
     console.log('Loading start page...');
-    const page = await browser.newPage();
     await page.goto(startPageUrl);
     console.log('Loading start page...DONE');
-    logCurrentPageUrl(page);
+}
 
+async function doPostCodeStep(page: puppeteer.Page) {
     console.log('Enter post code into input...');
     await page.waitForSelector('input#P153_POST_CODE', { visible: true });
     await page.type('input#P153_POST_CODE', postCode);
@@ -39,7 +44,9 @@ export async function getNextBinDate(): Promise<IBinData> {
     console.log('Submit post code...DONE');
 
     await page.waitForNavigation();
+}
 
+async function doStreetAddressStep(page: puppeteer.Page) {
     console.log('Select house number...');
     const [targetOption] = await page.$x(
         `//*[@id="P153_UPRN"]/option[contains(text(), "${houseNumber}")]`
@@ -57,7 +64,9 @@ export async function getNextBinDate(): Promise<IBinData> {
     console.log('Submit house number...DONE');
 
     await page.waitForNetworkIdle();
+}
 
+async function collectBinDataFromPage(page: puppeteer.Page): Promise<IBinData[]> {
     // get the two tables: ul#CollectionDay_report li
     const wasteListItems = await page.$$('ul#CollectionDay_report li');
     let wasteData: IBinData[] = [];
@@ -84,9 +93,24 @@ export async function getNextBinDate(): Promise<IBinData> {
     }
 
     console.log('Got bin data!');
+    return wasteData;
+}
+
+export async function getNextBinDate(): Promise<IBinData> {
+    // https://github.com/puppeteer/puppeteer/issues/2924#issuecomment-880992772
+
+    const browser: puppeteer.Browser = await startBrowser(true);
+    const page: puppeteer.Page = await browser.newPage();
+
+    await goToStartPage(page);
+
+    await doPostCodeStep(page);
+
+    await doStreetAddressStep(page);
+
+    const wasteData = await collectBinDataFromPage(page);
 
     wasteData.sort((a, b) => (a.wasteDate > b.wasteDate ? 1 : -1));
-    //console.log(JSON.stringify(wasteData));
 
     //await page.screenshot({ path: 'example.png' });
 
@@ -104,17 +128,25 @@ export async function getNextBinDate(): Promise<IBinData> {
     return nextWasteData;
 }
 
+type BinDataCacheValue = [Date, Promise<IBinData>];
+type BinDataCache = BinDataCacheValue | undefined;
+let staticBinDataCache: BinDataCache = undefined;
+
+export function isCacheReady(binDataCache: BinDataCache): binDataCache is BinDataCacheValue {
+    return !!binDataCache && isSameDay(binDataCache[0], new Date());
+}
+
 export async function getCachedBinData(): Promise<IBinData> {
-    if (lastBinData && isSameDay(lastBinData[0], new Date())) {
+    if (isCacheReady(staticBinDataCache)) {
         console.log('bin cache hit');
-        return lastBinData[1];
+        return staticBinDataCache[1];
     }
 
     console.log('bin cache miss');
     const binPromise = getNextBinDate();
 
     console.log('setup cache');
-    lastBinData = [new Date(), binPromise];
+    staticBinDataCache = [new Date(), binPromise];
 
     return binPromise;
 }
