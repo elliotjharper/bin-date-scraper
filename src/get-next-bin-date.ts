@@ -27,41 +27,41 @@ async function goToStartPage(page: puppeteer.Page) {
     const startPageUrl =
         'https://www.testvalley.gov.uk/wasteandrecycling/when-are-my-bins-collected/look-up-my-bin-collection-days';
 
-    console.log('Loading start page...');
+    //console.log('Loading start page...');
     await page.goto(startPageUrl);
-    console.log('Loading start page...DONE');
+    //console.log('Loading start page...DONE');
 }
 
 async function doPostCodeStep(page: puppeteer.Page) {
-    console.log('Enter post code into input...');
+    //console.log('Enter post code into input...');
     await page.waitForSelector('input#P153_POST_CODE', { visible: true });
     await page.type('input#P153_POST_CODE', postCode);
-    console.log('Enter post code into input...DONE');
+    //console.log('Enter post code into input...DONE');
 
-    console.log('Submit post code...');
+    //console.log('Submit post code...');
     await page.waitForSelector('button[title="Search"]');
     await page.click('button[title="Search"]');
-    console.log('Submit post code...DONE');
+    //console.log('Submit post code...DONE');
 
     await page.waitForNavigation();
 }
 
 async function doStreetAddressStep(page: puppeteer.Page) {
-    console.log('Select house number...');
+    //console.log('Select house number...');
     const [targetOption] = await page.$x(
         `//*[@id="P153_UPRN"]/option[contains(text(), "${houseNumber}")]`
     );
     await targetOption.evaluate((targetOptionActual) => {
         (targetOptionActual as HTMLOptionElement).selected = true;
     });
-    console.log('Select house number...DONE');
+    //console.log('Select house number...DONE');
 
-    console.log('Submit house number...');
+    //console.log('Submit house number...');
     const [goButton] = await page.$x(
         '//span[contains(@class, "t-Button-label")][contains(text(), "Go")]/..'
     );
     await goButton.click();
-    console.log('Submit house number...DONE');
+    //console.log('Submit house number...DONE');
 
     await page.waitForNetworkIdle();
 }
