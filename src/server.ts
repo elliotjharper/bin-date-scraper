@@ -1,12 +1,12 @@
 import bodyParser from 'body-parser';
 import express from 'express';
-import { readFileSync } from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as https from 'https';
 import { binSkill } from './alexa-bin-skill';
 import { verifyAlexaRequest } from './verify-alexa-request';
 //const express: core.Express = require('express');
 
-export function startServer() {
+export async function startServer() {
     const app = express();
     const port = 443;
 
@@ -33,11 +33,14 @@ export function startServer() {
         }
     });
 
+    const privateKey = await fsPromises.readFile('./certs/privkey.pem', 'utf8');
+    const fullChainKey = await fsPromises.readFile('./certs/fullchain.pem', 'utf8');
+
     https
         .createServer(
             {
-                key: readFileSync('./certs/privkey.pem'),
-                cert: readFileSync('./certs/fullchain.pem'),
+                key: privateKey,
+                cert: fullChainKey,
             },
             app
         )

@@ -132,12 +132,16 @@ type BinDataCacheValue = [Date, Promise<IBinData>];
 type BinDataCache = BinDataCacheValue | undefined;
 let staticBinDataCache: BinDataCache = undefined;
 
-export function isCacheReady(binDataCache: BinDataCache): binDataCache is BinDataCacheValue {
+function internalIsCacheReady(binDataCache: BinDataCache): binDataCache is BinDataCacheValue {
     return !!binDataCache && isSameDay(binDataCache[0], new Date());
 }
 
+export function isCacheReady(): boolean {
+    return internalIsCacheReady(staticBinDataCache);
+}
+
 export async function getCachedBinData(): Promise<IBinData> {
-    if (isCacheReady(staticBinDataCache)) {
+    if (internalIsCacheReady(staticBinDataCache)) {
         console.log('bin cache hit');
         return staticBinDataCache[1];
     }

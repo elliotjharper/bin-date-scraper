@@ -4,9 +4,9 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "next-bin-date": "ts-node ./src/get-next-bin-date.ts",
-        "run-alexa-server": "ts-node ./src/server.ts",
-        "build-alexa-server": "tsc --project tsconfig.json"
+        "test-next-bin-date": "ts-node ./src/test-next-bin-date.ts",
+        "build-alexa-server": "tsc --project tsconfig.json",
+        "run-alexa-server": "ts-node ./src/server.ts"
     },
     "author": "",
     "license": "ISC",
